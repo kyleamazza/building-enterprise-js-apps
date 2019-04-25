@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf dist/ && babel src -d dist",
-    "serve": "yarn run build && node dist/index.js",
+    "serve": "yarn run build && dotenv node dist/index.js",
     "watch": "nodemon -w src --exec yarn run serve",
     "fix": "eslint src --fix",
     "lint": "eslint src",
-    "test:e2e": "npx cucumber-js spec/cucumber/features/ --require-module @babel/register --require spec/cucumber/steps/"
+    "test:e2e": "dotenv cucumber-js -- spec/cucumber/features/ --require-module @babel/register --require spec/cucumber/steps/"
   },
   "repository": {
     "type": "git",
@@ -28,12 +28,14 @@
     "@babel/preset-env": "^7.4.3",
     "@babel/register": "^7.4.0",
     "cucumber": "^5.1.0",
+    "dotenv-cli": "^2.0.0",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.17.2",
     "husky": "^1.3.1",
     "nodemon": "^1.18.11",
-    "rimraf": "^2.6.3"
+    "rimraf": "^2.6.3",
+    "superagent": "^5.0.2"
   },
   "dependencies": {
     "@babel/polyfill": "^7.4.3"
