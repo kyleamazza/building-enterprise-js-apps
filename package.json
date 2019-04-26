@@ -7,8 +7,8 @@
     "build": "rimraf dist/ && babel src -d dist",
     "serve": "yarn run build && dotenv node dist/index.js",
     "watch": "nodemon -w src --exec yarn run serve",
-    "fix": "eslint src --fix",
     "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test:e2e": "dotenv cucumber-js -- spec/cucumber/features/ --require-module @babel/register --require spec/cucumber/steps/"
   },
   "repository": {
