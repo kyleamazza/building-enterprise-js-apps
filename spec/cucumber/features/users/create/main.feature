@@ -19,3 +19,35 @@ Feature: Create User
       | empty       | 400         | "Payload should not be empty"                                 | 
       | non-JSON    | 415         | 'The "Content-Type" header must always be "application/json"' |
       | malformed   | 400         | "Payload should be in JSON format"                            |
+
+  Scenario Outline: Bad Request Payload
+    If the client sends a POST request to /users with a payload with missing fields, it should receive a response with a 4xx Bad Request HTTP status code.
+
+    When the client creates a POST request to /users
+    And attaches a Create User payload which is missing the <missingFields> field
+    And sends the request
+    Then our API should respond with a 400 HTTP status code
+    And the payload of the response should be a JSON object
+    And contains a message property which says "Payload must contain at least the email and password fields"
+
+    Examples:
+      | missingFields   |
+      | email           |
+      | password        |
+      | email, password |
+
+  Scenario Outline: Payload with Properties of Unsupported Type
+    If the client sends a POST request to /users with fields of unsupported datatypes, it should receive a response with a 4xx Bad Request HTTP status code.
+
+    When the client creates a POST request to /users
+    And attaches a Create User payload where the <field> field is not of type <type>
+    And sends the request
+    Then our API should respond with a 400 HTTP status code
+    And the payload of the response should be a JSON object
+    And contains a message property which says "The email and password fields must be of type string"
+
+    Examples:
+      | field     | type    |
+      | email     | string  |
+      | password  | string  |
+    

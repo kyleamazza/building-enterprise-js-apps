@@ -30,6 +30,53 @@ When(/^attaches a generic (.+) payload$/, function (payloadType) {
   }
 });
 
+When(/^attaches an? (.+) payload which is missing the ([a-zA-Z0-9, ]+) fields?$/, function (payloadType, missingFields) {
+  const payload = {
+    email: 'e@ma.il',
+    password: 'password'
+  };
+
+  const fieldsToDelete = missingFields
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s !== '');
+
+  fieldsToDelete.forEach(field => delete payload[field]);
+
+  this.request
+    .send(JSON.stringify(payload))
+    .set('Content-Type', 'application/json');
+});
+
+When(/^attaches an? (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are)(\s+not)? of types? ([a-zA-Z]+)$/, function(payloadType, fields, invert, type) {
+  const payload = {
+    email: 'e@ma.il',
+    password: 'password'
+  };
+
+  const typeKey = type.toLowerCase();
+  const invertKey = invert ? 'not' : 'is';
+  const sampleValues = {
+    string: {
+      is: 'this is a string',
+      not: 10
+    }
+  };
+
+  const fieldsToModify = fields
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s !== '');
+
+  fieldsToModify.forEach((field) => {
+    payload[field] = sampleValues[typeKey][invertKey];
+  });
+
+  this.request
+    .send(JSON.stringify(payload))
+    .set('Content-Type', 'application/json');
+});
+
 When(/^without a (?:"|')([\w-]+)(?:"|') header set$/, function (headerName) { 
   this.request.unset(headerName);
 });
