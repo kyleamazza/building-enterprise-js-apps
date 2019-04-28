@@ -10,7 +10,6 @@ function requestHandler(req, res) {
 
     req.on('end', () => {
       if (payloadData.length === 0) {
-        // Empty payload :'(
         res.writeHead(400, {
           'Content-Type': 'application/json',
         });

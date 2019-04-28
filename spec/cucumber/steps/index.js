@@ -5,25 +5,29 @@ import superagent from 'superagent';
 // NOTENOTENOTENOETNOTE: If you don't need to run the `callback` function, do NOT include it in the function signature!!!!!!!!!!!!!!!!
 
 // These steps build up the action, which is sent in the final `When` function
-When(/^the client creates a POST request to \/users$/, function () {
+When(/^the client creates a (GET|POST|PATCH|PUT|DELETE|OPTIONS|HEAD) request to ([/\w-:/]+)$/, function (method, path) {
   const { SERVER_PROTOCOL, SERVER_HOSTNAME, SERVER_PORT } = process.env;
-  const url = `${SERVER_PROTOCOL}://${SERVER_HOSTNAME}:${SERVER_PORT}/users`;
-  this.request = superagent('POST', url);
+  const url = `${SERVER_PROTOCOL}://${SERVER_HOSTNAME}:${SERVER_PORT}${path}`;
+  this.request = superagent(method, url);
 });
 
-When(/^attaches a generic empty payload$/, function () {
-  // By default superagent attaches an empty payload if none is specified.
-  return undefined;
-});
-
-When(/^attaches a generic non-JSON payload$/, function () {
-  this.request.send('<?xml version="1.0" encoding="UTF-8"?><email>kyle@kyle.com</email>');
-  this.request.set('Content-Type', 'text/xml');
-});
-
-When(/^attaches a generic malformed payload$/, function () {
-  this.request.send('{"email": "kyle@kyle.com", name: }');
-  this.request.set('Content-Type', 'application/json');
+When(/^attaches a generic (.+) payload$/, function (payloadType) {
+  switch (payloadType) {
+    case 'malformed':
+      this.request
+        .send('{ "name": "john", {')
+        .set('Content-Type', 'application/json');
+      break;
+    case 'non-JSON':
+      this.request
+        .send('<?xml version="1.0" encoding="UTF-8"?><email>kyle@kyle.com</email>')
+        .set('Content-Type', 'text/xml');
+      break;
+    case 'empty':
+    default:
+      // Implicitly returns undefined, but we'll make it explicit here
+      return undefined;
+  }
 });
 
 When(/^sends the request$/, function (cb) {
@@ -38,12 +42,8 @@ When(/^sends the request$/, function (cb) {
     });
 });
 
-Then(/^our API should respond with a 400 HTTP status code$/, function () {
-  assert.equal(this.response.statusCode, 400);
-});
-
-Then(/^our API should respond with a 415 HTTP status code$/, function () {
-  assert.equal(this.response.statusCode, 415);
+Then(/^our API should respond with a ([1-5]\d{2}) HTTP status code$/, function (statusCode) {
+  assert.equal(this.response.statusCode, statusCode);
 });
 
 Then(/^the payload of the response should be a JSON object$/, function () {
@@ -61,15 +61,9 @@ Then(/^the payload of the response should be a JSON object$/, function () {
   }
 });
 
-Then(/^contains a message property which says "Payload should not be empty"$/, function () {
-  assert.equal(this.responsePayload.message, 'Payload should not be empty');
-});
-
-Then(/^contains a message property which says "Payload should be in JSON format"$/, function () {
-  assert.equal(this.responsePayload.message, 'Payload should be in JSON format');
-});
-
-Then(/^contains a message property which says \'The "Content-Type" header must always be "application\/json"\'$/, function () {
-  assert.equal(this.responsePayload.message, 'The "Content-Type" header must always be "application/json"');
+// NOTE: This regex basically helps determine whether the message has double/single quotes, and matches based on that.
+// The (?:...|...) syntax represents a "non-capturing" group. That is, the group is used to match, but is not itself concluded in the final regex string.
+Then(/^contains a message property which says (?:"|')(.*)(?:"|')$/, function (message) {
+  assert.equal(this.responsePayload.message, message);
 });
 
