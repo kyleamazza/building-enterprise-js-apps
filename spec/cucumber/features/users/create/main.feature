@@ -9,7 +9,7 @@ Feature: Create User
 
     When the client creates a POST request to /users
     And attaches a generic <payloadType> payload
-    And with a "Content-Type" header set with value <contentType>
+    And with a "Content-Type" header set with value "<contentType>"
     And sends the request
     Then our API should respond with a <statusCode> HTTP status code
     And the payload of the response should be a JSON object
@@ -69,3 +69,14 @@ Feature: Create User
       | a,b,c@!!    |
       | kyle@maz.z@ |
 
+  Scenario: Minimal Valid User
+    If a client sends a POST request to /users with a valid email field and a valid password field, it should receive a response with a 201 Created HTTP status code.
+
+    When the client creates a POST request to /users
+    And attaches a valid Create User payload
+    And with a "Content-Type" header set with value "application/json"
+    And sends the request
+    Then our API should respond with a 201 HTTP status code
+    And the payload of the response should be a string
+    And the payload object should be added to the database, grouped under the "user" type
+    

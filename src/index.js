@@ -66,7 +66,7 @@ app.route('/users')
         .json({ message: 'The email field must be a valid email' });
     }
 
-    return next();
+    return res.status(201).set('Content-Type', 'text/plain').send('yeet you did it');
   });
 
 app.use((err, req, res, next) => {

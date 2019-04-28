@@ -66,7 +66,13 @@ When(/^attaches a (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are) exa
     .set('Content-Type', 'application/json');
 });
 
-When(/^with a (?:"|')([\w-]+)(?:"|') header set with value ([\w]+\/[\w]+)$/, function (headerName, value) {
+When(/^attaches a valid (.+) payload$/, function (payloadType) {
+  this.requestPayload = getValidPayload(payloadType);
+  this.request
+    .send(JSON.stringify(this.requestPayload));
+});
+
+When(/^with a (?:"|')([\w-]+)(?:"|') header set with value (?:"|')([\w]+\/[\w]+)(?:"|')$/, function (headerName, value) {
   this.request.set(headerName, value);
 });
 
@@ -90,18 +96,29 @@ Then(/^our API should respond with a ([1-5]\d{2}) HTTP status code$/, function (
   assert.equal(this.response.statusCode, statusCode);
 });
 
-Then(/^the payload of the response should be a JSON object$/, function () {
+Then(/^the payload of the response should be a? ([a-zA-Z0-9, ]+)$/, function (payloadType) {
   const contentType = this.response.headers['Content-Type'] || this.response.headers['content-type'];
 
-  // We want the Content-Type to be declared as application/json
-  if (!contentType || !contentType.includes('application/json')) {
-    throw new Error('Response not of Content-Type: application/json');
-  }
+  if (payloadType === 'JSON object') {
+    // We want the Content-Type to be declared as application/json
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Response not of Content-Type: application/json');
+    }
 
-  try {
-    this.responsePayload = JSON.parse(this.response.text);
-  } catch (err) {
-    throw new Error('Response is not a valid JSON object');
+    try {
+      this.responsePayload = JSON.parse(this.response.text);
+    } catch (err) {
+      throw new Error('Response is not a valid JSON object');
+    }
+  } else if (payloadType === 'string') {
+    if (!contentType || !contentType.includes('text/plain')) {
+      throw new Error('Response not of Content-Type text/plain');
+    }
+
+    this.responsePayload = this.response.text;
+    if (typeof this.responsePayload !== 'string') {
+      throw new Error('Response not a string');
+    }
   }
 });
 
@@ -111,3 +128,6 @@ Then(/^contains a message property which says (?:"|')(.*)(?:"|')$/, function (me
   assert.equal(this.responsePayload.message, message);
 });
 
+Then(/^the payload object should be added to the database, grouped under the ([\w-]+) type$/, function (table) {
+  return 'pending';
+});
