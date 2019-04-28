@@ -59,6 +59,14 @@ app.route('/users')
         .json({ message: 'The email and password fields must be of type string' });
     }
 
+    if (!/^[\w.+]+@\w+\.\w+$/.test(email)) {
+      return res
+        .status(400)
+        .set('Content-Header', 'application/json')
+        .json({ message: 'The email field must be a valid email' });
+
+    }
+
     return next();
   });
 

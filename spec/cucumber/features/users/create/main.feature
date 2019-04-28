@@ -51,3 +51,20 @@ Feature: Create User
       | email     | string  |
       | password  | string  |
     
+  Scenario Outline: Request Payload with Invalid Email Format
+    If the client sends a POST request to /users with an email field with an invalid format, it should receive a response with a 4xx Bad Request HTTP status code.
+
+    When the client creates a POST request to /users
+    And attaches a Create User payload where the email field is exactly <email>
+    And sends the request
+    Then our API should respond with a 400 HTTP status code
+    And the payload of the response should be a JSON object
+    And contains a message property which says "The email field must be a valid email"
+
+    Examples:
+      | email       |
+      | a23juqy2    |
+      | a@1.2.3.4   |
+      | a,b,c@!!    |
+      | kyle@maz.z@ |
+
