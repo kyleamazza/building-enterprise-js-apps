@@ -2,6 +2,8 @@ import { When, Then } from 'cucumber';
 import assert from 'assert';
 import superagent from 'superagent';
 
+import { getValidPayload, convertStringToArray } from './utils';
+
 // NOTENOTENOTENOETNOTE: If you don't need to run the `callback` function, do NOT include it in the function signature!!!!!!!!!!!!!!!!
 
 // These steps build up the action, which is sent in the final `When` function
@@ -12,47 +14,26 @@ When(/^the client creates a (GET|POST|PATCH|PUT|DELETE|OPTIONS|HEAD) request to 
 });
 
 When(/^attaches a generic (.+) payload$/, function (payloadType) {
-  switch (payloadType) {
-    case 'malformed':
-      this.request
-        .send('{ "name": "john", {')
-        .set('Content-Type', 'application/json');
-      break;
-    case 'non-JSON':
-      this.request
-        .send('<?xml version="1.0" encoding="UTF-8"?><email>kyle@kyle.com</email>')
-        .set('Content-Type', 'text/xml');
-      break;
-    case 'empty':
-    default:
-      // Implicitly returns undefined, but we'll make it explicit here
-      return undefined;
-  }
+  this.requestPayload = getValidPayload(payloadType);
+
+  this.request
+    .send(JSON.stringify(this.requestPayload));
 });
 
 When(/^attaches an? (.+) payload which is missing the ([a-zA-Z0-9, ]+) fields?$/, function (payloadType, missingFields) {
-  const payload = {
-    email: 'e@ma.il',
-    password: 'password'
-  };
+  this.requestPayload = getValidPayload(payloadType);
+  const fieldsToModify = convertStringToArray(missingFields);
 
-  const fieldsToDelete = missingFields
-    .split(',')
-    .map(s => s.trim())
-    .filter(s => s !== '');
-
-  fieldsToDelete.forEach(field => delete payload[field]);
+  fieldsToModify.forEach(field => delete this.requestPayload[field]);
 
   this.request
-    .send(JSON.stringify(payload))
+    .send(JSON.stringify(this.requestPayload))
     .set('Content-Type', 'application/json');
 });
 
 When(/^attaches an? (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are)(\s+not)? of types? ([a-zA-Z]+)$/, function(payloadType, fields, invert, type) {
-  const payload = {
-    email: 'e@ma.il',
-    password: 'password'
-  };
+  this.requestPayload = getValidPayload(payloadType);
+  const fieldsToModify = convertStringToArray(fields);
 
   const typeKey = type.toLowerCase();
   const invertKey = invert ? 'not' : 'is';
@@ -63,38 +44,30 @@ When(/^attaches an? (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are)(\
     }
   };
 
-  const fieldsToModify = fields
-    .split(',')
-    .map(s => s.trim())
-    .filter(s => s !== '');
-
   fieldsToModify.forEach((field) => {
-    payload[field] = sampleValues[typeKey][invertKey];
+    this.requestPayload[field] = sampleValues[typeKey][invertKey];
   });
 
   this.request
-    .send(JSON.stringify(payload))
+    .send(JSON.stringify(this.requestPayload))
     .set('Content-Type', 'application/json');
 });
 
 When(/^attaches a (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are) exactly (.+)$/, function (payloadType, fields, value) {
-  const payload = {
-    email: 'e@ma.il',
-    password: 'password'
-  };
-  
-  const fieldsToModify = fields
-    .split(',')
-    .map(s => s.trim())
-    .filter(s => s !== '');
+  this.requestPayload = getValidPayload(payloadType);
+  const fieldsToModify = convertStringToArray(fields);
   
   fieldsToModify.forEach(field => {
-    payload[field] = value
+    this.requestPayload[field] = value
   });
 
   this.request
-    .send(JSON.stringify(payload))
+    .send(JSON.stringify(this.requestPayload))
     .set('Content-Type', 'application/json');
+});
+
+When(/^with a (?:"|')([\w-]+)(?:"|') header set with value ([\w]+\/[\w]+)$/, function (headerName, value) {
+  this.request.set(headerName, value);
 });
 
 When(/^without a (?:"|')([\w-]+)(?:"|') header set$/, function (headerName) { 

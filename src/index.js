@@ -64,7 +64,6 @@ app.route('/users')
         .status(400)
         .set('Content-Header', 'application/json')
         .json({ message: 'The email field must be a valid email' });
-
     }
 
     return next();

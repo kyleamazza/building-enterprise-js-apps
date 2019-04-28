@@ -9,16 +9,17 @@ Feature: Create User
 
     When the client creates a POST request to /users
     And attaches a generic <payloadType> payload
+    And with a "Content-Type" header set with value <contentType>
     And sends the request
     Then our API should respond with a <statusCode> HTTP status code
     And the payload of the response should be a JSON object
     And contains a message property which says <message>
 
     Examples:
-      | payloadType | statusCode  | message                                                       |
-      | empty       | 400         | "Payload should not be empty"                                 | 
-      | non-JSON    | 415         | 'The "Content-Type" header must always be "application/json"' |
-      | malformed   | 400         | "Payload should be in JSON format"                            |
+      | payloadType | contentType       | statusCode  | message                                                       |
+      | empty       | text/plain        | 400         | "Payload should not be empty"                                 | 
+      | non-JSON    | text/xml          | 415         | 'The "Content-Type" header must always be "application/json"' |
+      | malformed   | application/json  | 400         | "Payload should be in JSON format"                            |
 
   Scenario Outline: Bad Request Payload
     If the client sends a POST request to /users with a payload with missing fields, it should receive a response with a 4xx Bad Request HTTP status code.
