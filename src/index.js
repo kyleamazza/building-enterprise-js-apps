@@ -3,29 +3,48 @@ import bodyParser from 'body-parser';
 
 const app = express();
 
-app.use(bodyParser.json({ limit: 1e6 }));
-
-app.post('/users', (req, res) => {
-  // req.headers.* are all strings...
-  if (req.headers['content-length'] === '0') {
+function checkEmptyPayload(req, res, next) {
+  if (['POST', 'PATCH', 'PUT'].includes(req.method) && (req.headers['content-length'] === '0' || req.headers['content-length'])) {
     return res
       .status(400)
       .set('Content-Type', 'application/json')
       .json({ message: 'Payload should not be empty' });
   }
 
-  if (req.headers['content-type'] !== 'application/json') {
+  return next();
+}
+
+function checkContentTypeIsSet(req, res, next) {
+  if (req.headers['content-length'] && req.headers['content-length'] !== '0' && !req.headers['content-type']) {
+    return res
+      .status(400)
+      .set('Content-Type', 'application/json')
+      .json({ message: 'The "Content-Type" header must be set for requests with a non-empty payload' });
+  }
+
+  return next();
+}
+
+function checkContentTypeIsJson(req, res, next) {
+  if (!req.headers['content-type'].includes('application/json')) {
+    console.log('yetteyyett');
     return res
       .status(415)
       .set('Content-Type', 'application/json')
       .json({ message: 'The "Content-Type" header must always be "application/json"' });
   }
 
-  return res
-    .status(400)
-    .set('Content-Type', 'application/json')
-    .json({ message: 'Payload should be in JSON format' });
-});
+  return next();
+}
+
+app.use(checkEmptyPayload);
+app.use(checkContentTypeIsSet);
+app.use(checkContentTypeIsJson);
+
+app.use(bodyParser.json({ limit: 1e6 }));
+
+app.route('/users')
+  .post((req, res, next) => next());
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err && err.type === 'entity.parse.failed') {
@@ -34,8 +53,10 @@ app.use((err, req, res, next) => {
       .set('Content-Type', 'application/json')
       .json({ message: 'Payload should be in JSON format' });
   }
+
   return next();
 });
+
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`Server listening on port ${process.env.SERVER_PORT}`);
