@@ -1,0 +1,47 @@
+#!/bin/bash
+
+if ss -tln | grep -q :${SERVER_PORT}; then
+  echo "Another process is already listening to $SERVER_PORT..."
+  exit 1;
+fi
+
+# Use 0.2 only if the value is not set elsewhere
+RETRY_INTERVAL=${RETRY_INTERVAL:-0.2}
+
+if ! systemctl --quiet is-active elasticsearch.service; then
+  echo "ElasticSearch service not active, attempting to start..."
+  sudo service elasticsearch start
+  echo "Polling ElasticSearch..."
+  until curl -s $ELASTICSEARCH_HOSTNAME:$ELASTICSEARCH_PORT -w "" -o /dev/null; do
+    echo -n "."
+    sleep $RETRY_INTERVAL
+  done
+  echo
+  echo "ElasticSearch is now running!"
+fi
+
+echo "Attempting to start server..."
+yarn run serve &
+
+until ss -tln | grep :$SERVER_PORT -q; do
+  sleep $RETRY_INTERVAL
+done
+
+echo "Commencing test suite..."
+npx cucumber-js spec/cucumber/features --require-module @babel/register --require spec/cucumber/steps
+
+if systemctl --quiet is-active elasticsearch.service; then
+  echo "Attempting to shut down ElasticSearch..."
+  sudo service elasticsearch stop
+  until ! curl -s $ELASTICSEARCH_HOSTNAME:$ELASTICSEARCH_PORT -w "" -o /dev/null; do
+    echo "Polling ElasticSearch..."
+    sleep $RETRY_INTERVAL
+  done
+  echo "ElasticSearch has shut down"
+fi
+
+# Terminate all processes within the same process group i.e. this script SIGTERM signal
+kill -15 0
+
+echo "Testing finished"
+
