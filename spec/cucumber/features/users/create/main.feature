@@ -79,4 +79,5 @@ Feature: Create User
     Then our API should respond with a 201 HTTP status code
     And the payload of the response should be a string
     And the payload object should be added to the database, grouped under the "user" type
+    And the newly-created user should be deleted
     

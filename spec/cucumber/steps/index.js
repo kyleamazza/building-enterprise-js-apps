@@ -1,10 +1,16 @@
 import { When, Then } from 'cucumber';
 import assert from 'assert';
 import superagent from 'superagent';
+import elasticsearch from 'elasticsearch';
 
 import { getValidPayload, convertStringToArray } from './utils';
 
-// NOTENOTENOTENOETNOTE: If you don't need to run the `callback` function, do NOT include it in the function signature!!!!!!!!!!!!!!!!
+// NOTENOTENOTENOETNOTE: If you don't need to run the `callback` function,
+// do NOT include it in the function signature!!!!!!!!!!!!!!!!
+
+const client = new elasticsearch.Client({
+  host: `${process.env.ELASTICSEARCH_PROTOCOL}://${process.env.ELASTICSEARCH_HOSTNAME}:${process.env.ELASTICSEARCH_PORT}`
+});
 
 // These steps build up the action, which is sent in the final `When` function
 When(/^the client creates a (GET|POST|PATCH|PUT|DELETE|OPTIONS|HEAD) request to ([/\w-:/]+)$/, function (method, path) {
@@ -31,7 +37,7 @@ When(/^attaches an? (.+) payload which is missing the ([a-zA-Z0-9, ]+) fields?$/
     .set('Content-Type', 'application/json');
 });
 
-When(/^attaches an? (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are)(\s+not)? of types? ([a-zA-Z]+)$/, function(payloadType, fields, invert, type) {
+When(/^attaches an? (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are)(\s+not)? of types? ([a-zA-Z]+)$/, function (payloadType, fields, invert, type) {
   this.requestPayload = getValidPayload(payloadType);
   const fieldsToModify = convertStringToArray(fields);
 
@@ -56,9 +62,9 @@ When(/^attaches an? (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are)(\
 When(/^attaches a (.+) payload where the ([a-zA-Z0-9, ]+) fields? (?:is|are) exactly (.+)$/, function (payloadType, fields, value) {
   this.requestPayload = getValidPayload(payloadType);
   const fieldsToModify = convertStringToArray(fields);
-  
-  fieldsToModify.forEach(field => {
-    this.requestPayload[field] = value
+
+  fieldsToModify.forEach((field) => {
+    this.requestPayload[field] = value;
   });
 
   this.request
@@ -76,7 +82,7 @@ When(/^with a (?:"|')([\w-]+)(?:"|') header set with value (?:"|')([\w]+\/[\w]+)
   this.request.set(headerName, value);
 });
 
-When(/^without a (?:"|')([\w-]+)(?:"|') header set$/, function (headerName) { 
+When(/^without a (?:"|')([\w-]+)(?:"|') header set$/, function (headerName) {
   this.request.unset(headerName);
 });
 
@@ -122,12 +128,40 @@ Then(/^the payload of the response should be a? ([a-zA-Z0-9, ]+)$/, function (pa
   }
 });
 
-// NOTE: This regex basically helps determine whether the message has double/single quotes, and matches based on that.
-// The (?:...|...) syntax represents a "non-capturing" group. That is, the group is used to match, but is not itself concluded in the final regex string.
+// NOTE: This regex basically helps determine whether the message has double/single quotes,
+// and matches based on that.
+// The (?:...|...) syntax represents a "non-capturing" group.
+// That is, the group is used to match, but is not itself concluded in the final regex string.
 Then(/^contains a message property which says (?:"|')(.*)(?:"|')$/, function (message) {
   assert.equal(this.responsePayload.message, message);
 });
 
-Then(/^the payload object should be added to the database, grouped under the ([\w-]+) type$/, function (table) {
-  return 'pending';
+Then(/^the payload object should be added to the database, grouped under the (?:"|')([a-zA-Z]+)(?:"|') type$/, async function (type) {
+  this.type = type;
+  try {
+    const result = await client.get({
+      index: 'hobnob',
+      type: this.type,
+      id: this.responsePayload
+    });
+    
+    assert.deepEqual(result._source, this.requestPayload);
+  } catch (e) {
+    return e;
+  }
 });
+
+Then(/^the newly\-created user should be deleted$/, async function () {
+  try {
+    const result = await client.delete({
+      index: 'hobnob',
+      type: this.type,
+      id: this.responsePayload
+    });
+
+    assert.equal(res.result, 'deleted');
+  } catch (e) {
+    return e;
+  }
+});
+

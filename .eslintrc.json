@@ -13,6 +13,8 @@
         "sourceType": "module"
     },
     "rules": {
-      "no-console": "off"
+      "no-console": "off",
+      "comma-dangle": "off",
+      "no-underscore-dangle": "off"
     }
 }
