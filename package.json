@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf dist/ && babel src -d dist",
-    "serve": "yarn run build && dotenv node dist/index.js",
+    "serve": "yarn run build && dotenv -e envs/.env node dist/index.js",
     "watch": "nodemon -w src --exec yarn run serve",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "test:e2e": "dotenv cucumber-js -- spec/cucumber/features/ --require-module @babel/register --require spec/cucumber/steps/"
+    "test:e2e": "dotenv -e envs/test.env -e envs/.env cucumber-js -- spec/cucumber/features/ --require-module @babel/register --require spec/cucumber/steps/"
   },
   "repository": {
     "type": "git",

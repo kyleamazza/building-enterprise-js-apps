@@ -140,7 +140,7 @@ Then(/^the payload object should be added to the database, grouped under the (?:
   this.type = type;
   try {
     const result = await client.get({
-      index: 'hobnob',
+      index: process.env.ELASTICSEARCH_INDEX,
       type: this.type,
       id: this.responsePayload
     });
@@ -154,7 +154,7 @@ Then(/^the payload object should be added to the database, grouped under the (?:
 Then(/^the newly\-created user should be deleted$/, async function () {
   try {
     const result = await client.delete({
-      index: 'hobnob',
+      index: process.env.ELASTICSEARCH_INDEX,
       type: this.type,
       id: this.responsePayload
     });

@@ -69,7 +69,7 @@ app.post('/users', async (req, res) => {
       .set('Content-Header', 'application/json')
       .json({ message: 'The email field must be a valid email' });
   }
-  
+
   try {
     const result = await client.index({
       index: 'hobnob',
@@ -88,8 +88,6 @@ app.post('/users', async (req, res) => {
       .set('Content-Type', 'application/json')
       .json({ message: 'Internal Server Error' });
   }
-
-  return res.status(201).set('Content-Type', 'text/plain').send('yeet you did it');
 });
 
 app.use((err, req, res, next) => {
