@@ -2,50 +2,25 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import elasticsearch from 'elasticsearch';
 
+import {
+  checkEmptyPayload,
+  checkContentTypeIsSet,
+  checkContentTypeIsJSON,
+  errorHandler
+} from './middlewares';
+
 const app = express();
 
 const client = new elasticsearch.Client({
   host: `${process.env.ELASTICSEARCH_PROTOCOL}://${process.env.ELASTICSEARCH_HOSTNAME}:${process.env.ELASTICSEARCH_PORT}`
 });
 
-function checkEmptyPayload(req, res, next) {
-  if (['POST', 'PATCH', 'PUT'].includes(req.method) && (req.headers['content-length'] === '0' || !req.headers['content-length'])) {
-    return res
-      .status(400)
-      .set('Content-Type', 'application/json')
-      .json({ message: 'Payload should not be empty' });
-  }
-
-  return next();
-}
-
-function checkContentTypeIsSet(req, res, next) {
-  if (req.headers['content-length'] && req.headers['content-length'] !== '0' && !req.headers['content-type']) {
-    return res
-      .status(400)
-      .set('Content-Type', 'application/json')
-      .json({ message: 'The "Content-Type" header must be set for requests with a non-empty payload' });
-  }
-
-  return next();
-}
-
-function checkContentTypeIsJson(req, res, next) {
-  if (!req.headers['content-type'].includes('application/json')) {
-    return res
-      .status(415)
-      .set('Content-Type', 'application/json')
-      .json({ message: 'The "Content-Type" header must always be "application/json"' });
-  }
-
-  return next();
-}
+app.use(bodyParser.json({ limit: 1e6 }));
 
 app.use(checkEmptyPayload);
 app.use(checkContentTypeIsSet);
-app.use(checkContentTypeIsJson);
-
-app.use(bodyParser.json({ limit: 1e6 }));
+app.use(checkContentTypeIsJSON);
+app.use(errorHandler);
 
 app.post('/users', async (req, res) => {
   const { email, password } = req.body;
@@ -89,18 +64,6 @@ app.post('/users', async (req, res) => {
       .json({ message: 'Internal Server Error' });
   }
 });
-
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err && err.type === 'entity.parse.failed') {
-    return res
-      .status(400)
-      .set('Content-Type', 'application/json')
-      .json({ message: 'Payload should be in JSON format' });
-  }
-
-  return next();
-});
-
 
 app.listen(process.env.SERVER_PORT, () => {
   console.log(`Server listening on port ${process.env.SERVER_PORT}`);
