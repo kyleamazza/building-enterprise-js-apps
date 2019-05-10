@@ -11,7 +11,7 @@ import {
   errorHandler
 } from './middlewares';
 
-import { createUser } from './services/users';
+import { createUser } from './handlers/users';
 
 const app = express();
 
