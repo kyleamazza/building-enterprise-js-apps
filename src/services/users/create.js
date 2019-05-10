@@ -1,28 +1,13 @@
+import { ValidationError } from '../../validators/errors';
+import { validate } from '../../validators/users';
+
 async function createUser(req, res, db) {
-  const { email, password } = req.body;
-  const { hasOwnProperty } = Object.prototype.hasOwnProperty;
-  if (
-    !hasOwnProperty.call(req.body, 'email')
-    || !hasOwnProperty.call(req.body, 'password')
-  ) {
+  const validationResults = validate(req);
+  if (validationResults instanceof ValidationError) {
     return res
       .status(400)
       .set('Content-Type', 'application/json')
-      .json({ message: 'Payload must contain at least the email and password fields' });
-  }
-
-  if (typeof email !== 'string' || typeof password !== 'string') {
-    return res
-      .status(400)
-      .set('Content-Type', 'application/json')
-      .json({ message: 'The email and password fields must be of type string' });
-  }
-
-  if (!/^[\w.+]+@\w+\.\w+$/.test(email)) {
-    return res
-      .status(400)
-      .set('Content-Type', 'application/json')
-      .json({ message: 'The email field must be a valid email' });
+      .json({ message: validationResults.message });
   }
 
   try {
