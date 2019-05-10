@@ -19,6 +19,14 @@ When(/^the client creates a (GET|POST|PATCH|PUT|DELETE|OPTIONS|HEAD) request to 
   this.request = superagent(method, url);
 });
 
+When(/^attaches (.+) as the JSON payload$/, function (payload) {
+  this.requestPayload = JSON.parse(payload);
+  console.log(this.requestPayload);
+  this.request
+    .send(payload)
+    .set('Content-Type', 'application/json');
+});
+
 When(/^attaches a generic (.+) payload$/, function (payloadType) {
   this.requestPayload = getValidPayload(payloadType);
 

@@ -9,6 +9,7 @@ async function createUser(req, res, db) {
       .set('Content-Type', 'text/plain')
       .send(result._id);
   } catch (e) {
+    console.log(e);
     if (e instanceof ValidationError) {
       return res
         .status(400)

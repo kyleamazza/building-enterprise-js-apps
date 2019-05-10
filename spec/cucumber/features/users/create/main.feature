@@ -17,9 +17,9 @@ Feature: Create User
 
     Examples:
       | payloadType | contentType       | statusCode  | message                                                       |
-      | empty       | text/plain        | 400         | "Payload should not be empty"                                 | 
+      | empty       | text/plain        | 400         | 'Payload should not be empty'                                 | 
       | non-JSON    | text/xml          | 415         | 'The "Content-Type" header must always be "application/json"' |
-      | malformed   | application/json  | 400         | "Payload should be in JSON format"                            |
+      | malformed   | application/json  | 400         | 'Payload should be in JSON format'                            |
 
   Scenario Outline: Bad Request Payload
     If the client sends a POST request to /users with a payload with missing fields, it should receive a response with a 4xx Bad Request HTTP status code.
@@ -29,13 +29,12 @@ Feature: Create User
     And sends the request
     Then our API should respond with a 400 HTTP status code
     And the payload of the response should be a JSON object
-    And contains a message property which says "Payload must contain at least the email and password fields"
+    And contains a message property which says "<message>"
 
     Examples:
-      | missingFields   |
-      | email           |
-      | password        |
-      | email, password |
+      | missingFields   | message                           |
+      | email           | The '.email' field is missing     |
+      | password        | The '.password' field is missing  |
 
   Scenario Outline: Payload with Properties of Unsupported Type
     If the client sends a POST request to /users with fields of unsupported datatypes, it should receive a response with a 4xx Bad Request HTTP status code.
@@ -45,7 +44,7 @@ Feature: Create User
     And sends the request
     Then our API should respond with a 400 HTTP status code
     And the payload of the response should be a JSON object
-    And contains a message property which says "The email and password fields must be of type string"
+    And contains a message property which says "The '.<field>' field must be of type '<type>'"
 
     Examples:
       | field     | type    |
@@ -60,7 +59,7 @@ Feature: Create User
     And sends the request
     Then our API should respond with a 400 HTTP status code
     And the payload of the response should be a JSON object
-    And contains a message property which says "The email field must be a valid email"
+    And contains a message property which says "The '.email' field must be a valid email"
 
     Examples:
       | email       |
@@ -81,3 +80,37 @@ Feature: Create User
     And the payload object should be added to the database, grouped under the "user" type
     And the newly-created user should be deleted
     
+  Scenario Outline: Invalid Profile Creation Payload
+    If a client sends a POST request to /users with an invalid profile payload, it should receive a response with a 400 HTTP status code.
+
+    When the client creates a POST request to /users
+    And attaches <payload> as the JSON payload
+    And sends the request
+    Then our API should respond with a 400 HTTP status code
+    And the payload of the response should be a JSON object
+    And contains a message property which says "<message>"
+
+    Examples:
+      | payload                                                                           | message                                                   |
+      | {"email":"e@ma.il","password":"abc","profile":{"foo":"bar"}}                      | The '.profile' object does not support the field 'foo'    |
+      | {"email":"e@ma.il","password":"abc","profile":{"name":{"first":"Jan","a":"b"}}}   | The '.profile.name' object does not support the field 'a' |
+      | {"email":"e@ma.il","password":"abc","profile":{"summary":true}}                   | The '.profile.summary' field must be of type 'string'     |
+      | {"email":"e@ma.il","password":"abc","profile":{"bio":0}}                          | The '.profile.bio' field must be of type 'string'         | 
+
+  Scenario Outline: Valid Profile
+    If a client sends a POST request to /users with a valid profile payload, it should receive a response with a 201 Created HTTP status code.
+
+    When the client creates a POST request to /users
+    And attaches <payload> as the JSON payload
+    And sends the request
+    Then our API should respond with a 201 HTTP status code
+    And the payload of the response should be a string
+    And the payload object should be added to the database, grouped under the "user" type
+    And the newly-created user should be deleted
+
+    Examples:
+      | payload                                                                       |
+      | {"email":"e@ma.il","password":"password","profile":{}}                        |
+      | {"email":"e@ma.il","password":"password","profile":{"name":{"first":"Kyle"}}} |
+      | {"email":"e@ma.il","password":"password","profile":{"bio":"bio"}}             |
+      | {"email":"e@ma.il","password":"password","profile":{"summary":"summary"}}     |
