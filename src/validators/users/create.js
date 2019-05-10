@@ -1,27 +1,22 @@
-import { ValidationError } from '../errors';
+import Ajv from 'ajv';
+import { profileSchema, createUserSchema } from '../../schema/users';
+
+import { generateValidationErrorMessage, ValidationError } from '../errors';
 
 function validate(req) {
-  const { hasOwnProperty } = Object.prototype;
-  const { email, password } = req.body;
-  if (
-    !hasOwnProperty.call(req.body, 'email')
-    || !hasOwnProperty.call(req.body, 'password')
-  ) {
-    return new ValidationError('Payload must contain at least the email and password fields');
+  const ajvValidate = new Ajv()
+    .addFormat('email', /^[\w.+]+@\w+\.\w+$/)
+    .addSchema([ profileSchema, createUserSchema ])
+    .compile(createUserSchema);
+
+  const valid = ajvValidate(req.body);
+
+  if (!valid) {
+    const message = generateValidationErrorMessage(ajvValidate.errors);
+    return new ValidationError(message);
   }
 
-  if (
-    typeof email !== 'string'
-    || typeof password !== 'string'
-  ) {
-    return new ValidationError('The email and password fields must be of type string');
-  }
-
-  if (!/^[\w.+]+@\w+\.\w+$/.test(email)) {
-    return new ValidationError('The email field must be a valid email');
-  }
-
-  return undefined;
+  return true;
 }
 
 export default validate;

@@ -1,5 +1,7 @@
 import ValidationError from './ValidationError';
+import generateValidationErrorMessage from './messages';
 
 export {
-  ValidationError
+  ValidationError,
+  generateValidationErrorMessage
 };

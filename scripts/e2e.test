@@ -31,6 +31,8 @@ echo "Commencing test suite..."
 npx cucumber-js spec/cucumber/features --require-module @babel/register --require spec/cucumber/steps
 
 if systemctl --quiet is-active elasticsearch.service; then
+  echo "Deleting test index..."
+  curl -X DELETE localhost:9200/$ELASTICSEARCH_INDEX
   echo "Attempting to shut down ElasticSearch..."
   sudo service elasticsearch stop
   until ! curl -s $ELASTICSEARCH_HOSTNAME:$ELASTICSEARCH_PORT -w "" -o /dev/null; do
