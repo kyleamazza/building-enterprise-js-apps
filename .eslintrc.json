@@ -17,5 +17,17 @@
       "comma-dangle": "off",
       "no-underscore-dangle": "off",
       "import/prefer-default-export": "off"
-    }
+    },
+    "overrides": [
+      {
+        "files": ["*.test.js"],
+        "env": {
+          "mocha": true
+        },
+        "rules": {
+          "func-names": "off",
+          "prefer-arrow-callback": "off"
+        }
+      }
+    ]
 }

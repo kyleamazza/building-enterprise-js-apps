@@ -21,7 +21,6 @@ When(/^the client creates a (GET|POST|PATCH|PUT|DELETE|OPTIONS|HEAD) request to 
 
 When(/^attaches (.+) as the JSON payload$/, function (payload) {
   this.requestPayload = JSON.parse(payload);
-  console.log(this.requestPayload);
   this.request
     .send(payload)
     .set('Content-Type', 'application/json');
